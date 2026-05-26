@@ -96,6 +96,12 @@ Route::middleware('auth')->group(function () {
     ->name('formularios.actualizar');
 
 
+    
+    Route::post('/formularios/{id}/modo', [FormularioController::class, 'actualizarModo']);
+
+   
+
+
 
         // Secciones y preguntas AJAX
     Route::post('/formularios/{formulario}/secciones', [FormularioController::class, 'storeSeccion'])->name('formularios.secciones.store');

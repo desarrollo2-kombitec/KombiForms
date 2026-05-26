@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,12 +22,14 @@ class Pregunta extends Model
         'orden',
         'escala_min',
         'escala_max',
-        'etiqueta_inicial',   
-        'etiqueta_final'      
+        'etiqueta_inicial',
+        'etiqueta_final',
+        'requiere_evaluador' // ← AGREGAR
     ];
 
     protected $casts = [
-        'obligatorio' => 'boolean'
+        'obligatorio' => 'boolean',
+        'requiere_evaluador' => 'boolean' // ← AGREGAR
     ];
 
     public function seccion()
@@ -36,7 +39,8 @@ class Pregunta extends Model
 
     public function opciones()
     {
-        return $this->hasMany(Opcion::class, 'pregunta_id')->orderBy('id','asc');
+        return $this->hasMany(Opcion::class, 'pregunta_id')
+                    ->orderBy('id','asc');
     }
 
     public function filas()

@@ -1,8 +1,4 @@
 @extends('layouts.app')
-
-
-
-
 @section('content')
 
 <script>
@@ -10,14 +6,41 @@
     console.log("Secciones recibidas:", @json($formulario->secciones ?? []));
 </script>
 <script>
-    window.dataSecciones = @json($formulario->secciones);
+    window.dataSecciones = @json($dataSecciones);
     window.dataFormularioId = {{ $formulario->id }};
 </script>
 
     <div
-        x-data="formBuilder(window.dataSecciones, window.dataFormularioId)"
-        class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100"
-    >
+x-data="{
+    ...formBuilder(window.dataSecciones, window.dataFormularioId),
+
+    modoFormulario: '{{ $formulario->modo }}',
+
+    actualizarModo() {
+
+        fetch(`/formularios/${window.dataFormularioId}/modo`, {
+
+            method: 'POST',
+
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+
+            body: JSON.stringify({
+                modo: this.modoFormulario
+            })
+
+        })
+        .then(res => res.json())
+        .then(data => console.log('Modo actualizado:', data))
+        .catch(err => console.error(err));
+    }
+
+}"
+class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+
+
 
 
     {{-- ================= PANEL LATERAL MEJORADO ================= --}}
@@ -126,6 +149,7 @@
 
             {{-- Guardar Formulario --}}
             <button @click="guardar()"
+            
                     class="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-gray-800 to-gray-900 
                         hover:from-gray-900 hover:to-black text-white px-4 py-2 rounded-lg
                         shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105">
@@ -142,6 +166,26 @@
 
     {{-- ================= ÁREA PRINCIPAL ================= --}}
     <main class="flex-1 p-6 space-y-6 overflow-y-auto">
+
+        <div class="flex items-center gap-4 mb-6">
+            <label class="text-lg font-semibold text-gray-700">Modo:</label>
+            <div class="relative">
+                <select x-model="modoFormulario" @change="actualizarModo()"
+                        class="appearance-none px-6 py-2 rounded-lg font-medium text-white shadow-md 
+                            bg-[#00A30C] hover:bg-[#00940B] focus:outline-none focus:ring-2 focus:ring-green-400 
+                            transition-all duration-200 ease-in-out pr-10">
+                    <option value="encuesta">Encuesta</option>
+                    <option value="cuestionario">Cuestionario</option>
+                </select>
+
+                <!-- Ícono personalizado en blanco -->
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
         <template x-for="(seccion, sIndex) in secciones" :key="seccion.id">
             <div
                 class="bg-white p-6 shadow-xl rounded-2xl space-y-4 border border-gray-200 hover:shadow-2xl transition-shadow duration-200"
@@ -277,33 +321,93 @@
 
                         
 
-                            {{-- OPCIONES CON BOTÓN MEJORADO --}}
-                            <template x-if="isChoice(pregunta)">
-                                <div class="space-y-3 mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <h4 class="text-sm font-bold text-blue-900">Opciones de respuesta</h4>
-                                        <button @click="addOption(sIndex, pIndex)"
-                                                class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
-                                            + Nueva opción
-                                        </button>
-                                    </div>
-                                    
-                                    <template x-for="(op, oIndex) in pregunta.opciones" :key="op.id">
-                                        <div class="flex gap-2 items-center">
-                                            <span class="text-gray-400 font-mono text-sm" x-text="oIndex + 1 + '.'"></span>
-                                            <input x-model="op.texto" 
-                                                class="border-2 border-gray-300 focus:border-blue-500 p-2 rounded-lg w-full outline-none transition-colors"
-                                                placeholder="Escribe una opción">
-                                            <button @click="removeOption(sIndex, pIndex, oIndex)"
-                                                    class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </template>
-                                </div>
-                            </template>
+{{-- OPCIONES CON BOTÓN MEJORADO --}}
+<template x-if="['opcion_multiple','casillas'].includes(pregunta.tipo)">
+    <div class="space-y-3 mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div class="flex items-center justify-between mb-2">
+            <h4 class="text-sm font-bold text-blue-900">Opciones de respuesta</h4>
+            <button @click="addOption(sIndex, pIndex)"
+                    class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                + Nueva opción
+            </button>
+        </div>
+        
+        <template x-for="(op, oIndex) in pregunta.opciones" :key="op.id">
+            <div class="flex gap-2 items-center">
+                <span class="text-gray-400 font-mono text-sm" x-text="oIndex + 1 + '.'"></span>
+                <input x-model="op.texto" 
+                       class="border-2 border-gray-300 focus:border-blue-500 p-2 rounded-lg w-full outline-none transition-colors"
+                       placeholder="Escribe una opción">
+
+                <!-- Correcta solo visible en modo cuestionario -->
+                <template x-if="modoFormulario === 'cuestionario'">
+                    <label class="flex items-center gap-1 text-sm text-green-700">
+                        <!-- Radio para opción múltiple -->
+                        <input type="radio"
+                               x-show="pregunta.tipo === 'opcion_multiple'"
+                               :name="'correcta-' + pregunta.id"
+                               x-model="pregunta.correcta_id"
+                               :value="op.id"
+                               @change="guardarOpcionCorrecta(pregunta.id, op.id, 'opcion_multiple', 1)">
+
+                        <!-- Checkbox para casillas -->
+                        <input type="checkbox"
+                               x-show="pregunta.tipo === 'casillas'"
+                               x-model="op.es_correcta"
+                               @change="guardarOpcionCorrecta(pregunta.id, op.id, 'casillas', op.es_correcta)">
+
+                        Correcta
+                    </label>
+                </template>
+
+                <button @click="removeOption(sIndex, pIndex, oIndex)"
+                        class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </template>
+    </div>
+</template>
+
+
+
+
+{{-- PREGUNTAS ABIERTAS (Texto corto / párrafo) --}}
+<template x-if="['texto_corto','parrafo'].includes(pregunta.tipo)">
+    <div class="mb-4">
+
+        <textarea
+            x-model="pregunta.texto"
+            placeholder="Escribe tu pregunta aquí"
+            class="border-2 border-gray-300 focus:border-indigo-500 w-full p-3 rounded-lg outline-none transition-colors">
+        </textarea>
+
+        <!-- Checkbox solo visible en modo cuestionario -->
+        <template x-if="modoFormulario === 'cuestionario'">
+            <div class="flex justify-end mt-2">
+                <label class="flex items-center gap-2 text-sm text-indigo-700">
+                   <input
+                        type="checkbox"
+                        x-model="pregunta.requiere_evaluador"
+                    >
+
+
+                    Esta pregunta se evaluará manualmente
+                </label>
+            </div>
+        </template>
+    </div>
+</template>
+
+
+
+
+
+
+
+
 
                             {{-- ESCALA LINEAL
                             <template x-if="pregunta.tipo === 'escala_lineal'">

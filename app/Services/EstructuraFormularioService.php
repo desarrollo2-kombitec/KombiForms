@@ -54,6 +54,10 @@ class EstructuraFormularioService
                         'etiqueta_inicial' => $dataPregunta['etiqueta_inicial'] ?? null, 
                         'etiqueta_final'   => $dataPregunta['etiqueta_final'] ?? null,   
 
+                        'requiere_evaluador' => isset($dataPregunta['requiere_evaluador'])
+        ? (int) $dataPregunta['requiere_evaluador']
+        : 0,
+
                     ]);
 
                     // ===============================

@@ -19,7 +19,8 @@ class Opcion extends Model
         'texto',
         'fila',
         'columna',
-        'orden'
+        'orden',
+        'es_correcta'
     ];
 
     public function pregunta()

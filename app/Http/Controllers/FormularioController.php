@@ -109,50 +109,205 @@ public function index()
         ->with('success', 'Formulario creado correctamente.');
 }
 
-    // ===============================================
-    // EDITAR FORMULARIO (Constructor)
-    // ===============================================
-   public function editar($id)
-    {
-        $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
+/*
+// ===============================================
+// EDITAR FORMULARIO (Constructor)
+// ===============================================
+public function editar($id)
+{
+    $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
 
-        // Mapear estructura para separar filas, columnas y celdas
-        $formulario->secciones->each(function ($seccion) {
-            $seccion->preguntas->each(function ($pregunta) {
-                if (in_array($pregunta->tipo, ['cuadricula_opciones', 'cuadricula_casillas'])) {
-                    $pregunta->filas = $pregunta->opciones
-                        ->whereNotNull('fila')
-                        ->whereNull('columna')
-                        ->map(fn($o) => ['texto' => $o->texto, 'fila' => $o->fila])
-                        ->values();
+    $formulario->secciones->each(function ($seccion) {
+        $seccion->preguntas->each(function ($pregunta) {
 
-                    $pregunta->columnas = $pregunta->opciones
-                        ->whereNotNull('columna')
-                        ->whereNull('fila')
-                        ->map(fn($o) => ['texto' => $o->texto, 'columna' => $o->columna])
-                        ->values();
+            if (in_array($pregunta->tipo, ['cuadricula_opciones', 'cuadricula_casillas'])) {
+                $pregunta->filas = $pregunta->opciones
+                    ->whereNotNull('fila')
+                    ->whereNull('columna')
+                    ->map(fn($o) => ['texto' => $o->texto, 'fila' => $o->fila])
+                    ->values();
 
-                    $pregunta->opciones_cuadricula = $pregunta->opciones
-                        ->whereNotNull('fila')
-                        ->whereNotNull('columna')
-                        ->map(fn($o) => [
+                $pregunta->columnas = $pregunta->opciones
+                    ->whereNotNull('columna')
+                    ->whereNull('fila')
+                    ->map(fn($o) => ['texto' => $o->texto, 'columna' => $o->columna])
+                    ->values();
+
+                $pregunta->opciones_cuadricula = $pregunta->opciones
+                    ->whereNotNull('fila')
+                    ->whereNotNull('columna')
+                    ->map(fn($o) => [
+                        'texto' => $o->texto,
+                        'fila' => $o->fila,
+                        'columna' => $o->columna
+                    ])
+                    ->values();
+            }
+
+            if ($pregunta->tipo === 'escala_lineal') {
+                $pregunta->etiqueta_inicial = $pregunta->etiqueta_inicial ?? '';
+                $pregunta->etiqueta_final   = $pregunta->etiqueta_final ?? '';
+            }
+        });
+    });
+
+    // 🔥 IMPORTANTE: NO usar toArray()
+    return view('formularios.editar', [
+        'formulario' => $formulario,
+        'dataSecciones' => $formulario->secciones, // 👈 mantener colección Eloquent
+    ]);
+}*/
+
+
+// ===============================================
+// EDITAR FORMULARIO (Constructor)
+// ===============================================
+public function editar($id)
+{
+    $formulario = Formulario::with(['secciones.preguntas.opciones'])
+        ->findOrFail($id);
+
+    $formulario->secciones->each(function ($seccion) {
+
+        $seccion->preguntas->each(function ($pregunta) {
+
+            // ==================================================
+            // NORMALIZAR BOOLEANOS / FLAGS
+            // ==================================================
+            $pregunta->obligatorio = (int) $pregunta->obligatorio;
+            $pregunta->requiere_evaluador = (int) $pregunta->requiere_evaluador;
+
+            // ==================================================
+            // CUADRÍCULAS
+            // ==================================================
+            if (in_array($pregunta->tipo, [
+                'cuadricula_opciones',
+                'cuadricula_casillas'
+            ])) {
+
+                // FILAS
+                $pregunta->filas = $pregunta->opciones
+                    ->whereNotNull('fila')
+                    ->whereNull('columna')
+                    ->map(function ($o) {
+                        return [
+                            'id' => $o->id,
                             'texto' => $o->texto,
                             'fila' => $o->fila,
-                            'columna' => $o->columna
-                        ])
-                        ->values();
-                }
+                        ];
+                    })
+                    ->values();
 
-                // 👇 Asegurar que escala_lineal tenga etiquetas
-                if ($pregunta->tipo === 'escala_lineal') {
-                    $pregunta->etiqueta_inicial = $pregunta->etiqueta_inicial ?? '';
-                    $pregunta->etiqueta_final   = $pregunta->etiqueta_final ?? '';
-                }
-            });
+                // COLUMNAS
+                $pregunta->columnas = $pregunta->opciones
+                    ->whereNotNull('columna')
+                    ->whereNull('fila')
+                    ->map(function ($o) {
+                        return [
+                            'id' => $o->id,
+                            'texto' => $o->texto,
+                            'columna' => $o->columna,
+                        ];
+                    })
+                    ->values();
+
+                // OPCIONES CUADRÍCULA
+                $pregunta->opciones_cuadricula = $pregunta->opciones
+                    ->whereNotNull('fila')
+                    ->whereNotNull('columna')
+                    ->map(function ($o) {
+                        return [
+                            'id' => $o->id,
+                            'texto' => $o->texto,
+                            'fila' => $o->fila,
+                            'columna' => $o->columna,
+                        ];
+                    })
+                    ->values();
+            }
+
+            // ==================================================
+            // ESCALA LINEAL
+            // ==================================================
+            if ($pregunta->tipo === 'escala_lineal') {
+
+                $pregunta->escala_min = $pregunta->escala_min ?? 1;
+                $pregunta->escala_max = $pregunta->escala_max ?? 5;
+
+                $pregunta->etiqueta_inicial =
+                    $pregunta->etiqueta_inicial ?? '';
+
+                $pregunta->etiqueta_final =
+                    $pregunta->etiqueta_final ?? '';
+            }
         });
+    });
 
-        return view('formularios.editar', compact('formulario'));
-    }
+    // ==================================================
+    // PREPARAR DATA LIMPIA PARA ALPINE
+    // ==================================================
+    $dataSecciones = $formulario->secciones->map(function ($seccion) {
+
+        return [
+            'id' => $seccion->id,
+            'titulo' => $seccion->titulo,
+            'descripcion' => $seccion->descripcion,
+            'orden' => $seccion->orden,
+
+            'preguntas' => $seccion->preguntas->map(function ($p) {
+
+                return [
+
+                    'id' => $p->id,
+                    'tipo' => $p->tipo,
+                    'texto' => $p->texto,
+
+                    // 🔥 IMPORTANTES
+                    'obligatorio' => (int) $p->obligatorio,
+                    'requiere_evaluador' => (int) $p->requiere_evaluador,
+
+                    'orden' => $p->orden,
+
+                    // ESCALA
+                    'escala_min' => $p->escala_min,
+                    'escala_max' => $p->escala_max,
+                    'etiqueta_inicial' => $p->etiqueta_inicial,
+                    'etiqueta_final' => $p->etiqueta_final,
+
+                    // FILAS
+                    'filas' => $p->filas ?? [],
+
+                    // COLUMNAS
+                    'columnas' => $p->columnas ?? [],
+
+                    // OPCIONES
+                    'opciones' => $p->opciones
+                        ->map(function ($o) {
+
+                            return [
+                                'id' => $o->id,
+                                'texto' => $o->texto,
+                                'fila' => $o->fila,
+                                'columna' => $o->columna,
+                            ];
+                        })
+                        ->values(),
+
+                    // OPCIONES CUADRÍCULA
+                    'opciones_cuadricula' =>
+                        $p->opciones_cuadricula ?? [],
+                ];
+            })->values(),
+        ];
+    })->values();
+
+    return view('formularios.editar', [
+        'formulario' => $formulario,
+        'dataSecciones' => $dataSecciones,
+    ]);
+}
+
+
 
 
     // ===============================================
@@ -216,6 +371,8 @@ public function index()
         return redirect()->route('formularios.editar', $id)
             ->with('success', 'Cambios guardados correctamente.');
     }*/
+
+/*
    public function actualizar(Request $request, $id)
 {
     // Ver todo lo que llega del formulario
@@ -249,7 +406,96 @@ public function index()
 
     return redirect()->route('formularios.index')
         ->with('success', 'Cambios guardados correctamente.');
+}*/
+
+public function actualizar(Request $request, $id)
+{
+    
+
+    $formulario = Formulario::findOrFail($id);
+
+    // ==============================
+    // CONFIGURACIÓN DEL FORMULARIO
+    // ==============================
+    $config = $request->input('config_respuesta');
+    $permitirAnonimo = $config === 'anonimo';
+    $requiereCorreo  = $config === 'correo';
+
+    $formulario->update([
+        'titulo'           => $request->input('titulo', $formulario->titulo),
+        'descripcion'      => $request->input('descripcion', $formulario->descripcion),
+        'permitir_anonimo' => $permitirAnonimo,
+        'requiere_correo'  => $requiereCorreo,
+        'una_respuesta'    => $request->boolean('una_respuesta'),
+        'fecha_inicio'     => $request->input('fecha_inicio'),
+        'fecha_fin'        => $request->input('fecha_fin'),
+        'activo'           => $request->boolean('activo'),
+    ]);
+
+    // ==============================
+    // SECCIONES / PREGUNTAS / OPCIONES
+    // ==============================
+    foreach ($request->input('secciones', []) as $seccionData) {
+
+        foreach ($seccionData['preguntas'] ?? [] as $preguntaData) {
+
+            // Validación segura del ID
+            if (empty($preguntaData['id'])) {
+                continue;
+            }
+
+            $pregunta = Pregunta::find($preguntaData['id']);
+
+            if (!$pregunta) {
+                \Log::warning('Pregunta no encontrada', [
+                    'id' => $preguntaData['id']
+                ]);
+                continue;
+            }
+
+            // ==============================
+            // ACTUALIZAR PREGUNTA
+            // ==============================
+            $pregunta->texto = $preguntaData['texto'] ?? $pregunta->texto;
+
+            // 🔥 FIX DEFINITIVO DEL CHECKBOX
+            $pregunta->requiere_evaluador = !empty($preguntaData['requiere_evaluador']) ? 1 : 0;
+
+            // LOG PARA DEPURACIÓN
+            \Log::info('PREGUNTA ACTUALIZADA:', [
+                'id' => $pregunta->id,
+                'recibido' => $preguntaData['requiere_evaluador'] ?? 0,
+                'guardado' => $pregunta->requiere_evaluador
+            ]);
+
+            $pregunta->save();
+
+            // ==============================
+            // OPCIONES
+            // ==============================
+            foreach ($preguntaData['opciones'] ?? [] as $opcionData) {
+
+                if (empty($opcionData['id'])) {
+                    continue;
+                }
+
+                $opcion = Opcion::find($opcionData['id']);
+
+                if ($opcion) {
+                    $opcion->texto = $opcionData['texto'] ?? $opcion->texto;
+                    $opcion->es_correcta = !empty($opcionData['es_correcta']) ? 1 : 0;
+                    $opcion->save();
+                }
+            }
+        }
+    }
+
+    return redirect()
+        ->route('formularios.editar', $id)
+        ->with('success', 'Cambios guardados correctamente.');
 }
+
+
 
 
     // ===============================================
@@ -696,6 +942,15 @@ return response()->streamDownload(function() use ($writer) {
 }, $filename);
 }
 
+
+public function actualizarModo(Request $request, $id)
+{
+    $formulario = Formulario::findOrFail($id);
+    $formulario->modo = $request->modo;
+    $formulario->save();
+
+    return response()->json(['success' => true, 'modo' => $formulario->modo]);
+}
 
 
 

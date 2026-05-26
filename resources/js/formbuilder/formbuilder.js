@@ -62,6 +62,8 @@ function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
+
+/*
 function normalizarSeccion(sec) {
   return {
     id: sec.id ?? uid("s-"),
@@ -74,26 +76,96 @@ function normalizarSeccion(sec) {
       tipo: p.tipo ?? "texto_corto",
       texto: p.texto ?? "",
 
+      // 🔥 FIX CRÍTICO: normalización consistente de booleanos
       obligatorio: Number(p.obligatorio) === 1 ? 1 : 0,
+      requiere_evaluador: Number(p.requiere_evaluador) === 1 ? 1 : 0,
 
       orden: p.orden ?? 1,
       escala_min: p.escala_min ?? 1,
       escala_max: p.escala_max ?? 5,
 
-      // Añadir etiquetas aquí
+      // Etiquetas escala lineal
       etiqueta_inicial: p.etiqueta_inicial ?? "",
-      etiqueta_final:   p.etiqueta_final ?? "",
+      etiqueta_final: p.etiqueta_final ?? "",
 
+      // =========================
+      // FILAS (cuadrículas)
+      // =========================
       filas: (p.filas || []).map((f) => ({
         id: f.id ?? uid("f-"),
         texto: f.texto ?? "",
+        fila: f.fila ?? null,
       })),
 
+      // =========================
+      // COLUMNAS (cuadrículas)
+      // =========================
       columnas: (p.columnas || []).map((c) => ({
         id: c.id ?? uid("c-"),
         texto: c.texto ?? "",
+        columna: c.columna ?? null,
       })),
 
+      // =========================
+      // OPCIONES (preguntas normales)
+      // =========================
+      opciones: (p.opciones || []).map((o) => ({
+        id: o.id ?? uid("o-"),
+        texto: o.texto ?? "",
+        fila: o.fila ?? null,
+        columna: o.columna ?? null,
+      })),
+    })),
+  }
+}*/
+
+function normalizarSeccion(sec) {
+  return {
+    id: sec.id ?? uid("s-"),
+    titulo: sec.titulo ?? "Sección",
+    descripcion: sec.descripcion ?? "",
+    orden: sec.orden ?? 1,
+
+    preguntas: (sec.preguntas || []).map((p) => ({
+      id: p.id ?? uid("p-"),
+      tipo: p.tipo ?? "texto_corto",
+      texto: p.texto ?? "",
+
+      // =========================
+      // FIX IMPORTANTE: BOOLEANOS REALES
+      // =========================
+      obligatorio: Boolean(Number(p.obligatorio)),
+      requiere_evaluador: Boolean(Number(p.requiere_evaluador)),
+
+      orden: p.orden ?? 1,
+      escala_min: p.escala_min ?? 1,
+      escala_max: p.escala_max ?? 5,
+
+      // Etiquetas escala lineal
+      etiqueta_inicial: p.etiqueta_inicial ?? "",
+      etiqueta_final: p.etiqueta_final ?? "",
+
+      // =========================
+      // FILAS (cuadrículas)
+      // =========================
+      filas: (p.filas || []).map((f) => ({
+        id: f.id ?? uid("f-"),
+        texto: f.texto ?? "",
+        fila: f.fila ?? null,
+      })),
+
+      // =========================
+      // COLUMNAS (cuadrículas)
+      // =========================
+      columnas: (p.columnas || []).map((c) => ({
+        id: c.id ?? uid("c-"),
+        texto: c.texto ?? "",
+        columna: c.columna ?? null,
+      })),
+
+      // =========================
+      // OPCIONES (preguntas normales)
+      // =========================
       opciones: (p.opciones || []).map((o) => ({
         id: o.id ?? uid("o-"),
         texto: o.texto ?? "",
@@ -691,7 +763,8 @@ export function formBuilder(initialSections = [], formId = null) {
 
 
 
-    async guardar() {
+    async guardar() 
+    {
       if (!this.formId) {
         alert("No hay formId definido.");
         return;
@@ -739,7 +812,7 @@ export function formBuilder(initialSections = [], formId = null) {
 
 
     getEstructura() {
-  return this.secciones.map((sec, si) => ({
+    return this.secciones.map((sec, si) => ({
     titulo: sec.titulo?.trim() || "Sección sin título",
     descripcion: sec.descripcion?.trim() || "",
     orden: si + 1,
@@ -762,6 +835,8 @@ export function formBuilder(initialSections = [], formId = null) {
       //  2) GENERAR OBJETO FINAL DE LA PREGUNTA
       // ======================================================
       const preguntaFinal = {
+
+        requiere_evaluador: p.requiere_evaluador ? 1 : 0,
         tipo: p.tipo,
         texto: (p.texto?.trim() || "Pregunta sin título"),
         obligatorio: ["titulo", "texto"].includes(p.tipo) ? 0 : p.obligatorio ? 1 : 0,
