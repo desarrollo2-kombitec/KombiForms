@@ -134,7 +134,7 @@ function normalizarSeccion(sec) {
       // =========================
       // FIX IMPORTANTE: BOOLEANOS REALES
       // =========================
-      obligatorio: Boolean(Number(p.obligatorio)),
+      obligatorio: Number(p.obligatorio) === 1 || p.obligatorio === true || p.obligatorio === "true",
       requiere_evaluador: Boolean(Number(p.requiere_evaluador)),
 
       orden: p.orden ?? 1,

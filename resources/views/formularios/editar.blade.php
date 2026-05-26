@@ -576,7 +576,7 @@ class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                                 </div>
                             </template>
 
-                                                    <!-- OBLIGATORIA -->
+                            <!-- OBLIGATORIA -->
                             <template x-if="!['titulo','texto'].includes(pregunta.tipo)">
                                 <div class="flex justify-end items-center gap-3 mt-4">
                                     <span class="text-sm font-medium text-gray-600">
@@ -585,12 +585,12 @@ class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
 
                                     <!-- Toggle -->
                                     <button
-                                        @click="pregunta.obligatorio = pregunta.obligatorio === 1 ? 0 : 1"
-                                        :class="pregunta.obligatorio === 1 ? 'bg-indigo-600' : 'bg-gray-300'"
+                                        @click="pregunta.obligatorio = !pregunta.obligatorio"
+                                        :class="pregunta.obligatorio ? 'bg-indigo-600' : 'bg-gray-300'"
                                         class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none"
                                     >
                                         <span
-                                            :class="pregunta.obligatorio === 1 ? 'translate-x-6' : 'translate-x-1'"
+                                            :class="pregunta.obligatorio ? 'translate-x-6' : 'translate-x-1'"
                                             class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"
                                         ></span>
                                     </button>
