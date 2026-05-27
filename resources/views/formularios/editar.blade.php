@@ -340,11 +340,11 @@ class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         </div>
 
         <!-- LISTA -->
-        <template x-for="(op, oIndex) in pregunta.opciones" :key="oIndex">
+        <template x-for="(op, oIndex) in pregunta.opciones" :key="op.id">
 
             <div
                 class="flex gap-2 items-center p-2 rounded-lg transition"
-                :class="op.es_correcta == 1
+                :class="modoFormulario === 'cuestionario' && op.es_correcta == 1
                     ? 'bg-green-100 border border-green-300'
                     : 'bg-white'"
             >
@@ -362,18 +362,17 @@ class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                     placeholder="Escribe una opción"
                 >
 
-                <!-- SOLO EN MODO CUESTIONARIO -->
+                <!-- CONTROLES SOLO EN CUESTIONARIO -->
                 <div
                     x-show="modoFormulario === 'cuestionario'"
-                    class="flex items-center"
+                    class="flex items-center gap-3"
                 >
 
-                    <!-- OPCIÓN MÚLTIPLE -->
+                    <!-- OPCIÓN MÚLTIPLE (SOLO UNA CORRECTA) -->
                     <label
                         x-show="pregunta.tipo === 'opcion_multiple'"
                         class="flex items-center gap-2 text-sm text-green-700 cursor-pointer whitespace-nowrap"
                     >
-
                         <input
                             type="radio"
                             :name="'correcta-' + pregunta.id"
@@ -384,31 +383,23 @@ class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                             "
                         >
 
-                        <span class="font-medium">
-                            Correcta
-                        </span>
-
+                        <span class="font-medium">Correcta</span>
                     </label>
 
-                    <!-- CASILLAS -->
+                    <!-- CASILLAS (MÚLTIPLES CORRECTAS) -->
                     <label
                         x-show="pregunta.tipo === 'casillas'"
                         class="flex items-center gap-2 text-sm text-green-700 cursor-pointer whitespace-nowrap"
                     >
-
                         <input
                             type="checkbox"
                             :checked="op.es_correcta == 1"
                             @change="
-                                op.es_correcta =
-                                    $event.target.checked ? 1 : 0
+                                op.es_correcta = $event.target.checked ? 1 : 0
                             "
                         >
 
-                        <span class="font-medium">
-                            Correcta
-                        </span>
-
+                        <span class="font-medium">Correcta</span>
                     </label>
 
                 </div>
