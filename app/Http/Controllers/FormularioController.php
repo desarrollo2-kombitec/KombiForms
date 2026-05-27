@@ -292,6 +292,8 @@ public function editar($id)
                                 'texto' => $o->texto,
                                 'fila' => $o->fila,
                                 'columna' => $o->columna,
+                                'es_correcta' => (int) $o->es_correcta,
+
                             ];
                         })
                         ->values(),

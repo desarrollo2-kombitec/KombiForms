@@ -321,85 +321,142 @@ class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
 
                         
 
-{{-- OPCIONES CON BOTÓN MEJORADO --}}
+{{-- OPCIONES CON SELECCIÓN DE CORRECTAS --}}
 <template x-if="['opcion_multiple','casillas'].includes(pregunta.tipo)">
     <div class="space-y-3 mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+
+        <!-- HEADER -->
         <div class="flex items-center justify-between mb-2">
-            <h4 class="text-sm font-bold text-blue-900">Opciones de respuesta</h4>
-            <button @click="addOption(sIndex, pIndex)"
-                    class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+            <h4 class="text-sm font-bold text-blue-900">
+                Opciones de respuesta
+            </h4>
+
+            <button
+                @click="addOption(sIndex, pIndex)"
+                class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg shadow-md transition-all"
+            >
                 + Nueva opción
             </button>
         </div>
-        
-        <template x-for="(op, oIndex) in pregunta.opciones" :key="op.id">
-            <div class="flex gap-2 items-center">
-                <span class="text-gray-400 font-mono text-sm" x-text="oIndex + 1 + '.'"></span>
-                <input x-model="op.texto" 
-                       class="border-2 border-gray-300 focus:border-blue-500 p-2 rounded-lg w-full outline-none transition-colors"
-                       placeholder="Escribe una opción">
 
-                <!-- Correcta solo visible en modo cuestionario -->
-                <template x-if="modoFormulario === 'cuestionario'">
-                    <label class="flex items-center gap-1 text-sm text-green-700">
-                        <!-- Radio para opción múltiple -->
-                        <input type="radio"
-                               x-show="pregunta.tipo === 'opcion_multiple'"
-                               :name="'correcta-' + pregunta.id"
-                               x-model="pregunta.correcta_id"
-                               :value="op.id"
-                               @change="guardarOpcionCorrecta(pregunta.id, op.id, 'opcion_multiple', 1)">
+        <!-- LISTA -->
+        <template x-for="(op, oIndex) in pregunta.opciones" :key="oIndex">
 
-                        <!-- Checkbox para casillas -->
-                        <input type="checkbox"
-                               x-show="pregunta.tipo === 'casillas'"
-                               x-model="op.es_correcta"
-                               @change="guardarOpcionCorrecta(pregunta.id, op.id, 'casillas', op.es_correcta)">
+            <div
+                class="flex gap-2 items-center p-2 rounded-lg transition"
+                :class="op.es_correcta == 1
+                    ? 'bg-green-100 border border-green-300'
+                    : 'bg-white'"
+            >
 
-                        Correcta
-                    </label>
-                </template>
+                <!-- INDEX -->
+                <span
+                    class="text-gray-400 font-mono text-sm"
+                    x-text="oIndex + 1 + '.'"
+                ></span>
 
-                <button @click="removeOption(sIndex, pIndex, oIndex)"
-                        class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-        </template>
-    </div>
-</template>
+                <!-- TEXTO -->
+                <input
+                    x-model="op.texto"
+                    class="border-2 border-gray-300 focus:border-blue-500 p-2 rounded-lg w-full outline-none"
+                    placeholder="Escribe una opción"
+                >
 
+                <!-- SOLO EN MODO CUESTIONARIO -->
+                <div
+                    x-show="modoFormulario === 'cuestionario'"
+                    class="flex items-center"
+                >
 
-
-
-{{-- PREGUNTAS ABIERTAS (Texto corto / párrafo) --}}
-<template x-if="['texto_corto','parrafo'].includes(pregunta.tipo)">
-    <div class="mb-4">
-
-        <textarea
-            x-model="pregunta.texto"
-            placeholder="Escribe tu pregunta aquí"
-            class="border-2 border-gray-300 focus:border-indigo-500 w-full p-3 rounded-lg outline-none transition-colors">
-        </textarea>
-
-        <!-- Checkbox solo visible en modo cuestionario -->
-        <template x-if="modoFormulario === 'cuestionario'">
-            <div class="flex justify-end mt-2">
-                <label class="flex items-center gap-2 text-sm text-indigo-700">
-                   <input
-                        type="checkbox"
-                        x-model="pregunta.requiere_evaluador"
+                    <!-- OPCIÓN MÚLTIPLE -->
+                    <label
+                        x-show="pregunta.tipo === 'opcion_multiple'"
+                        class="flex items-center gap-2 text-sm text-green-700 cursor-pointer whitespace-nowrap"
                     >
 
+                        <input
+                            type="radio"
+                            :name="'correcta-' + pregunta.id"
+                            :checked="op.es_correcta == 1"
+                            @change="
+                                pregunta.opciones.forEach(o => o.es_correcta = 0);
+                                op.es_correcta = 1;
+                            "
+                        >
 
-                    Esta pregunta se evaluará manualmente
-                </label>
+                        <span class="font-medium">
+                            Correcta
+                        </span>
+
+                    </label>
+
+                    <!-- CASILLAS -->
+                    <label
+                        x-show="pregunta.tipo === 'casillas'"
+                        class="flex items-center gap-2 text-sm text-green-700 cursor-pointer whitespace-nowrap"
+                    >
+
+                        <input
+                            type="checkbox"
+                            :checked="op.es_correcta == 1"
+                            @change="
+                                op.es_correcta =
+                                    $event.target.checked ? 1 : 0
+                            "
+                        >
+
+                        <span class="font-medium">
+                            Correcta
+                        </span>
+
+                    </label>
+
+                </div>
+
+                <!-- DELETE -->
+                <button
+                    @click="removeOption(sIndex, pIndex, oIndex)"
+                    class="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                >
+                    ✕
+                </button>
+
             </div>
+
         </template>
+
     </div>
 </template>
+
+
+
+
+                            {{-- PREGUNTAS ABIERTAS (Texto corto / párrafo) --}}
+                            <template x-if="['texto_corto','parrafo'].includes(pregunta.tipo)">
+                                <div class="mb-4">
+
+                                    <textarea
+                                        x-model="pregunta.texto"
+                                        placeholder="Escribe tu pregunta aquí"
+                                        class="border-2 border-gray-300 focus:border-indigo-500 w-full p-3 rounded-lg outline-none transition-colors">
+                                    </textarea>
+
+                                    <!-- Checkbox solo visible en modo cuestionario -->
+                                    <template x-if="modoFormulario === 'cuestionario'">
+                                        <div class="flex justify-end mt-2">
+                                            <label class="flex items-center gap-2 text-sm text-indigo-700">
+                                            <input
+                                                    type="checkbox"
+                                                    x-model="pregunta.requiere_evaluador"
+                                                >
+
+
+                                                Esta pregunta se evaluará manualmente
+                                            </label>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
 
 
 

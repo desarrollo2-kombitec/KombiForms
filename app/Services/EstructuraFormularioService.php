@@ -41,45 +41,52 @@ class EstructuraFormularioService
 
                     // Guardamos la pregunta
                    $pregunta = Pregunta::create([
-    'seccion_id'  => $seccion->id,
-    'tipo'        => $dataPregunta['tipo'] ?? null,
-    'texto'       => $dataPregunta['texto'] ?? null,
+                        'seccion_id'  => $seccion->id,
+                        'tipo'        => $dataPregunta['tipo'] ?? null,
+                        'texto'       => $dataPregunta['texto'] ?? null,
 
-    'obligatorio' => isset($dataPregunta['obligatorio']) 
-        ? (int) $dataPregunta['obligatorio'] 
-        : 0,
+                        'obligatorio' => isset($dataPregunta['obligatorio']) 
+                            ? (int) $dataPregunta['obligatorio'] 
+                            : 0,
 
-    'requiere_evaluador' => isset($dataPregunta['requiere_evaluador'])
-        ? (int) $dataPregunta['requiere_evaluador']
-        : 0,
+                        'requiere_evaluador' => isset($dataPregunta['requiere_evaluador'])
+                            ? (int) $dataPregunta['requiere_evaluador']
+                            : 0,
 
-    // 🔥 ESTE ERA EL QUE FALTABA
-    'ponderacion' => isset($dataPregunta['ponderacion'])
-        ? (float) $dataPregunta['ponderacion']
-        : 1.00,
+                        // 🔥 ESTE ERA EL QUE FALTABA
+                        'ponderacion' => isset($dataPregunta['ponderacion'])
+                            ? (float) $dataPregunta['ponderacion']
+                            : 1.00,
 
-    'orden'       => $ordenPregunta + 1,
-    'escala_min'  => $dataPregunta['escala_min'] ?? null,
-    'escala_max'  => $dataPregunta['escala_max'] ?? null,
-    'etiqueta_inicial' => $dataPregunta['etiqueta_inicial'] ?? null,
-    'etiqueta_final'   => $dataPregunta['etiqueta_final'] ?? null,
-]);
+                        'orden'       => $ordenPregunta + 1,
+                        'escala_min'  => $dataPregunta['escala_min'] ?? null,
+                        'escala_max'  => $dataPregunta['escala_max'] ?? null,
+                        'etiqueta_inicial' => $dataPregunta['etiqueta_inicial'] ?? null,
+                        'etiqueta_final'   => $dataPregunta['etiqueta_final'] ?? null,
+                    ]);
 
                     // ===============================
                     // GUARDAR OPCIONES SEGÚN TIPO
                     // ===============================
 
                     // Tipos simples (opción múltiple, casillas, desplegable)
-                    if (in_array($pregunta->tipo, ['opcion_multiple', 'casillas', 'desplegable'])) {
-                        foreach ($dataPregunta['opciones'] ?? [] as $opcionData) {
-                            Opcion::create([
-                                'pregunta_id' => $pregunta->id,
-                                'texto'       => !empty($opcionData['texto']) ? $opcionData['texto'] : 'Opción Default',
-                                'fila'        => null,
-                                'columna'     => null,
-                            ]);
-                        }
-                    }
+if (in_array($pregunta->tipo, ['opcion_multiple', 'casillas', 'desplegable'])) {
+
+    foreach ($dataPregunta['opciones'] ?? [] as $opcionData) {
+
+        Opcion::create([
+            'pregunta_id' => $pregunta->id,
+            'texto'       => !empty($opcionData['texto']) ? $opcionData['texto'] : 'Opción Default',
+            'fila'        => null,
+            'columna'     => null,
+
+            // 🔥 AQUÍ ESTÁ LA CLAVE
+            'es_correcta' => isset($opcionData['es_correcta'])
+                ? (int) $opcionData['es_correcta']
+                : 0,
+        ]);
+    }
+}
 
                     // Tipos de cuadrícula (opciones/casillas)
                     if (in_array($pregunta->tipo, ['cuadricula_opciones', 'cuadricula_casillas'])) {

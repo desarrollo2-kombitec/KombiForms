@@ -174,6 +174,10 @@ function normalizarSeccion(sec) {
         texto: o.texto ?? "",
         fila: o.fila ?? null,
         columna: o.columna ?? null,
+
+        // 🔥 IMPORTANTE: estado real desde BD
+       es_correcta: Number(o.es_correcta) === 1
+
       })),
     })),
   }
@@ -971,13 +975,22 @@ export function formBuilder(initialSections = [], formId = null) {
             : [],
 
           opciones: ["opcion_multiple", "casillas", "desplegable"].includes(p.tipo)
-            ? (p.opciones || []).map((o, oi) => ({
-                texto: o.texto?.trim() || `Opción ${oi + 1}`,
-                orden: oi + 1,
-                fila: null,
-                columna: null
-              }))
-            : [],
+  ? (p.opciones || []).map((o, oi) => ({
+
+      texto: o.texto?.trim() || `Opción ${oi + 1}`,
+
+      orden: oi + 1,
+
+      fila: null,
+      columna: null,
+
+      // =========================================
+      // RESPUESTA CORRECTA
+      // =========================================
+      es_correcta: o.es_correcta ? 1 : 0
+
+    }))
+  : [],
 
           opciones_cuadricula: ["cuadricula_opciones", "cuadricula_casillas"].includes(p.tipo)
             ? cuadriculaAux.updateCuadriculaOpciones(p)
