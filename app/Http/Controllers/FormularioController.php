@@ -555,7 +555,7 @@ public function actualizar(Request $request, $id)
     }*/
     
     public function acceder($token)
-    {
+    { 
         $formulario = Formulario::where('token', $token)->firstOrFail();
 
         // Si está inactivo → mostrar vista de cerrado
@@ -574,6 +574,7 @@ public function actualizar(Request $request, $id)
         // Si requiere usuario registrado → redirigir al login normal
         return redirect()->route('login');
     }
+
 
   public function responder($id)
 {
@@ -598,6 +599,7 @@ public function actualizar(Request $request, $id)
 
     return view('formularios.responder', compact('formulario'));
 }
+
 
 
 

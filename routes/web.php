@@ -59,7 +59,7 @@ Route::get('/formulario_anonimo/{formulario}', [Contestar_FormularioController::
 // ===============================
 // ENLACES PÚBLICOS DE FORMULARIOS
 // ===============================
-
+/*
 // Enlace único para acceder a un formulario por token
 Route::get('/f/{token}', [FormularioController::class, 'acceder'])
     ->name('formularios.acceder');
@@ -67,6 +67,31 @@ Route::get('/f/{token}', [FormularioController::class, 'acceder'])
 // Vista para responder un formulario específico
 Route::get('/formularios/{id}/responder', [FormularioController::class, 'responder'])
     ->name('formularios.responder');
+
+
+    */
+// ===============================
+// ENLACES PÚBLICOS DE FORMULARIOS
+// ===============================
+
+// Acceso por token (decide si login normal o login anónimo)
+Route::get('/f/{token}', [FormularioController::class, 'acceder'])
+    ->name('formularios.acceder');
+
+// Vista para responder un formulario específico (mostrar preguntas)
+Route::get('/formularios/{id}/responder', [FormularioController::class, 'responder'])
+    ->name('formularios.responder');
+
+// Guardar respuestas (autenticados o anónimos)
+Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder'])
+    ->name('formularios.responder.guardar');
+
+// Vista anónima directa
+Route::get('/formulario_anonimo/{formulario}', [Contestar_FormularioController::class, 'mostrar'])
+    ->name('mostrar_anonimos');
+
+
+
 
 
 // ===============================
@@ -162,7 +187,7 @@ Route::middleware('auth')->group(function () {
         ->name('formularios.concentrarRespuestas');
 
     Route::get('/formularios/{formulario}', [Contestar_FormularioController::class, 'mostrar']) ->name('mostrar');
-    Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder']);
+    /* Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder']);*/
 
     
     Route::patch('/usuarios/{user}/toggle', [Usuarios::class, 'toggleActivo'])->name('usuarios.toggle');

@@ -23,12 +23,6 @@ class Contestar_FormularioController extends Controller
         return view('gracias');
     }
 
-    /*public function mostrar(Formulario $formulario)
-    {
-        $formulario->load('secciones.preguntas.opciones');
-
-        return view('Contestar_formulario', compact('formulario'));
-    }*/
 
     public function mostrar(Formulario $formulario)
     {
@@ -182,33 +176,9 @@ class Contestar_FormularioController extends Controller
     }
 
     
-
-   
-/*
 // ===============================================
 // VER DETALLE DE EVALUACIÓN
 // ===============================================
-public function evaluarRespuesta($id)
-{
-    $respuesta = \App\Models\Respuesta::with([
-        'usuario',
-        'formulario',
-        'respuestasIndividuales',
-        'respuestasIndividuales.pregunta',
-        'respuestasIndividuales.opcion'
-    ])->findOrFail($id);
-
-    $formulario = $respuesta->formulario;
-
-    // DEBUG
-    // dd($respuesta->respuestasIndividuales);
-
-    return view('formularios.evaluarRespuesta', compact(
-        'respuesta',
-        'formulario'
-    ));
-}*/
-
 
 public function evaluarRespuesta($id)
 {
