@@ -4,6 +4,19 @@
 
 <div class="p-6 max-w-5xl mx-auto">
 
+    {{-- Botón Regresar a Evaluaciones --}}
+<div class="mt-6 mb-6">
+    <a href="{{ route('formularios.evaluaciones', $formulario->id) }}"
+       class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 19l-7-7 7-7" />
+        </svg>
+        Regresar
+    </a>
+</div>
+
+
     <!-- HEADER -->
     <div class="mb-6 flex items-center justify-between">
 
@@ -62,12 +75,13 @@
             </div>
 
             <!-- 🆕 PUNTAJE TOTAL -->
-            <div>
+            <div class="mb-4">
                 <p class="text-xs uppercase text-gray-400 font-bold">Puntaje total</p>
-                <p class="text-gray-900 font-extrabold mt-1 text-lg">
-                    {{ $respuesta->puntaje_total ?? 0 }}
+                <p class="text-lg font-bold text-gray-900 puntaje-total">
+                    {{ number_format($respuesta->puntaje_total ?? 0, 2) }} / {{ number_format($respuesta->maxima_calificacion ?? 0, 2) }}
                 </p>
             </div>
+
 
         </div>
 
@@ -254,7 +268,7 @@ function evaluarRespuesta(id, estado, puntaje) {
     .then(data => {
         const card = document.getElementById(`respuesta-${id}`);
         if(card){
-            // Actualizar puntaje con formato 1.00 / 0.00
+            // Actualizar puntaje individual
             const puntajeEl = card.querySelector('.puntaje');
             if(puntajeEl) puntajeEl.innerText = parseFloat(data.puntaje).toFixed(2);
 
@@ -282,7 +296,14 @@ function evaluarRespuesta(id, estado, puntaje) {
                 }
             }
         }
+
+        // 🆕 Actualizar puntaje total en la cabecera
+        const totalEl = document.querySelector('.puntaje-total');
+        if(totalEl){
+            totalEl.innerText = `${parseFloat(data.puntaje_total).toFixed(2)} / ${parseFloat(data.maxima_calificacion).toFixed(2)}`;
+        }
     })
     .catch(error => console.error('Error:', error));
 }
 </script>
+
