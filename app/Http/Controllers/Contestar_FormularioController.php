@@ -155,7 +155,7 @@ class Contestar_FormularioController extends Controller
     }
 
 
-
+/*
     public function evaluaciones($id)
     {
         $formulario = Formulario::with('secciones.preguntas.opciones')->findOrFail($id);
@@ -224,7 +224,106 @@ class Contestar_FormularioController extends Controller
         });
 
         return view('formularios.evaluaciones', compact('formulario', 'respuestas'));
-    }
+    }*/
+
+ public function evaluaciones($id)
+{
+    $formulario = Formulario::with('secciones.preguntas.opciones')->findOrFail($id);
+
+    $respuestas = Respuesta::with([
+        'usuario',
+        'respuestasIndividuales.pregunta',
+        'respuestasIndividuales.opcion'
+    ])
+    ->where('formulario_id', $id)
+    ->orderByDesc('enviado_en')
+    ->get()
+    ->map(function ($respuesta) use ($formulario) {
+
+        // Recalcular máxima calificación
+        $respuesta->maxima_calificacion = $formulario->secciones
+            ->flatMap(fn($s) => $s->preguntas)
+            ->filter(function ($pregunta) {
+                return $pregunta->tipo === 'opcion_multiple'
+                    || $pregunta->tipo === 'casillas'
+                    || (
+                        in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                        && $pregunta->requiere_evaluador
+                    );
+            })
+            ->sum('ponderacion');
+
+        // Autoevaluar opción múltiple y casillas
+        foreach ($respuesta->respuestasIndividuales as $ri) {
+            $pregunta = $ri->pregunta;
+
+            // Opción múltiple
+            if ($pregunta->tipo === 'opcion_multiple' && $ri->opcion) {
+                if ($ri->opcion->es_correcta) {
+                    $ri->puntaje = $pregunta->ponderacion;
+                    $ri->estado = 'correcta';
+                } else {
+                    $ri->puntaje = 0.00;
+                    $ri->estado = 'incorrecta'; // 🆕 marcar como incorrecta
+                }
+                $ri->save();
+            }
+
+            // Casillas
+            if ($pregunta->tipo === 'casillas' && $ri->opcion) {
+                if ($ri->opcion->es_correcta) {
+                    $totalCorrectas = $pregunta->opciones->where('es_correcta', 1)->count();
+                    $ri->puntaje = $totalCorrectas > 0 ? $pregunta->ponderacion / $totalCorrectas : 0;
+                    $ri->estado = 'correcta';
+                } else {
+                    $ri->puntaje = 0.00;
+                    $ri->estado = 'incorrecta'; // 🆕 marcar como incorrecta
+                }
+                $ri->save();
+            }
+
+            // Preguntas no evaluables → N/A
+            if (!(
+                $pregunta->tipo === 'opcion_multiple'
+                || $pregunta->tipo === 'casillas'
+                || (
+                    in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                    && $pregunta->requiere_evaluador
+                )
+            )) {
+                $ri->puntaje = null;
+                $ri->estado = 'N/A';
+                $ri->save();
+            }
+        }
+
+        // Recalcular puntaje total
+        $respuesta->puntaje_total = $respuesta->respuestasIndividuales
+            ->where('estado', '!=', 'N/A')
+            ->sum('puntaje');
+
+        // Cambiar estado general automáticamente
+        $pendientes = $respuesta->respuestasIndividuales->filter(function ($ri) {
+            $pregunta = $ri->pregunta;
+            return (
+                $pregunta->tipo === 'opcion_multiple'
+                || $pregunta->tipo === 'casillas'
+                || (
+                    in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                    && $pregunta->requiere_evaluador
+                )
+            ) && $ri->estado === 'pendiente';
+        });
+
+        $respuesta->estado = $pendientes->isEmpty() ? 'evaluado' : 'pendiente';
+        $respuesta->save();
+
+        return $respuesta;
+    });
+
+    return view('formularios.evaluaciones', compact('formulario', 'respuestas'));
+}
+
 
 
     
@@ -305,7 +404,9 @@ class Contestar_FormularioController extends Controller
         return view('formularios.evaluarRespuesta', compact('respuesta', 'formulario'));
     }*/
 
-                        public function evaluarRespuesta($id)
+
+    /*
+public function evaluarRespuesta($id)
 {
     $respuesta = Respuesta::with([
         'usuario',
@@ -390,9 +491,94 @@ class Contestar_FormularioController extends Controller
 
     return view('formularios.evaluarRespuesta', compact('respuesta', 'formulario'));
 }
+*/
 
 
+public function evaluarRespuesta($id)
+{
+    $respuesta = Respuesta::with([
+        'usuario',
+        'formulario.secciones.preguntas.opciones',
+        'respuestasIndividuales.pregunta',
+        'respuestasIndividuales.opcion'
+    ])->findOrFail($id);
 
+    $formulario = $respuesta->formulario;
+
+    // 🆕 Recalcular máxima calificación cada vez que se abre la vista
+    $formulario->load('secciones.preguntas');
+    $respuesta->maxima_calificacion = $formulario->secciones
+        ->flatMap(fn($s) => $s->preguntas)
+        ->filter(function ($pregunta) {
+            return $pregunta->tipo === 'opcion_multiple'
+                || $pregunta->tipo === 'casillas'
+                || (
+                    in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                    && $pregunta->requiere_evaluador
+                );
+        })
+        ->sum('ponderacion');
+    $respuesta->save();
+
+    // Calcular automáticamente puntajes de opción múltiple y casillas
+    foreach ($respuesta->respuestasIndividuales as $ri) {
+        $pregunta = $ri->pregunta;
+
+        if ($pregunta->tipo === 'opcion_multiple' && $ri->opcion) {
+            if ($ri->opcion->es_correcta) {
+                $ri->puntaje = $pregunta->ponderacion;
+                $ri->estado = 'correcta';
+            } else {
+                $ri->puntaje = 0.00;
+                $ri->estado = 'incorrecta'; // 🆕 marcar como incorrecta
+            }
+            $ri->save();
+        } elseif ($pregunta->tipo === 'casillas' && $ri->opcion) {
+            if ($ri->opcion->es_correcta) {
+                $totalCorrectas = $pregunta->opciones->where('es_correcta', 1)->count();
+                $ri->puntaje = $totalCorrectas > 0 ? $pregunta->ponderacion / $totalCorrectas : 0;
+                $ri->estado = 'correcta';
+            } else {
+                $ri->puntaje = 0.00;
+                $ri->estado = 'incorrecta'; // 🆕 marcar como incorrecta
+            }
+            $ri->save();
+        } else {
+            // 🆕 Si la pregunta no es evaluable → marcar como N/A
+            if (!(
+                $pregunta->tipo === 'opcion_multiple'
+                || $pregunta->tipo === 'casillas'
+                || (
+                    in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                    && $pregunta->requiere_evaluador
+                )
+            )) {
+                $ri->puntaje = null;
+                $ri->estado = 'N/A';
+                $ri->save();
+            }
+        }
+    }
+
+    // Recalcular puntaje total (solo suma de evaluables)
+    $respuesta->puntaje_total = $respuesta->respuestasIndividuales
+        ->where('estado', '!=', 'N/A')
+        ->sum('puntaje');
+    $respuesta->save();
+
+    // ❌ Ya no recalculamos ni sobrescribimos el campo estado aquí
+    // Ese cambio solo lo hace guardarEvaluacionManual en tiempo real
+
+    // Ordenar respuestas para la vista
+    $respuesta->respuestasIndividuales = $respuesta->respuestasIndividuales
+        ->sortBy('pregunta_id')
+        ->values();
+
+    return view('formularios.evaluarRespuesta', compact('respuesta', 'formulario'));
+}
+
+
+/*
    public function guardarEvaluacionManual(Request $request, $id)
 {
     $ri = RespuestaIndividual::findOrFail($id);
@@ -434,7 +620,77 @@ class Contestar_FormularioController extends Controller
         'maxima_calificacion' => number_format($respuesta->maxima_calificacion, 2),
         'estado_general' => $respuesta->estado, // 🆕 estado general actualizado
     ]);
+}*/
+
+
+      public function guardarEvaluacionManual(Request $request, $id)
+{
+    $ri = RespuestaIndividual::findOrFail($id);
+    $pregunta = $ri->pregunta;
+
+    // Guardar estado y puntaje de la respuesta individual
+    $ri->estado = $request->input('estado');
+    $ri->puntaje = $request->input('puntaje');
+
+    // 🆕 Validar automáticamente opción múltiple y casillas
+    if ($pregunta) {
+        if ($pregunta->tipo === 'opcion_multiple' && $ri->opcion) {
+            if ($ri->opcion->es_correcta) {
+                $ri->puntaje = $pregunta->ponderacion;
+                $ri->estado = 'correcta';
+            } else {
+                $ri->puntaje = 0.00;
+                $ri->estado = 'incorrecta'; // marcar como incorrecta
+            }
+        }
+
+        if ($pregunta->tipo === 'casillas' && $ri->opcion) {
+            if ($ri->opcion->es_correcta) {
+                $totalCorrectas = $pregunta->opciones->where('es_correcta', 1)->count();
+                $ri->puntaje = $totalCorrectas > 0 ? $pregunta->ponderacion / $totalCorrectas : 0;
+                $ri->estado = 'correcta';
+            } else {
+                $ri->puntaje = 0.00;
+                $ri->estado = 'incorrecta'; // marcar como incorrecta
+            }
+        }
+    }
+
+    $ri->save();
+
+    $respuesta = $ri->respuesta;
+    $respuesta->load('respuestasIndividuales.pregunta'); // 🔑 asegurar carga fresca
+
+    // Recalcular puntaje total (solo evaluables, excluyendo N/A)
+    $respuesta->puntaje_total = $respuesta->respuestasIndividuales
+        ->where('estado', '!=', 'N/A')
+        ->sum('puntaje');
+
+    // Revisar si quedan pendientes en preguntas evaluables
+    $pendientes = $respuesta->respuestasIndividuales->filter(function ($ri) {
+        $pregunta = $ri->pregunta;
+        if (!$pregunta) return false;
+
+        $esEvaluable = in_array($pregunta->tipo, ['opcion_multiple','casillas'])
+            || (in_array($pregunta->tipo, ['texto_corto','parrafo']) && $pregunta->requiere_evaluador);
+
+        return $esEvaluable && $ri->estado === 'pendiente';
+    });
+
+    // Cambiar estado general automáticamente en tiempo real
+    $respuesta->estado = $pendientes->isEmpty() ? 'evaluado' : 'pendiente';
+    $respuesta->save();
+
+    // Devolver datos para actualizar en la vista vía AJAX
+    return response()->json([
+        'estado' => $ri->estado,
+        'puntaje' => number_format($ri->puntaje, 2),
+        'puntaje_total' => number_format($respuesta->puntaje_total, 2),
+        'maxima_calificacion' => number_format($respuesta->maxima_calificacion, 2),
+        'estado_general' => $respuesta->estado, // 🆕 estado general actualizado
+    ]);
 }
+
 
 
 

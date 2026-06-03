@@ -32,16 +32,13 @@
 
         <!-- ESTADO GENERAL -->
         <div>
-            @if($respuesta->estado === 'evaluado')
-                <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-bold">
-                    Evaluado
-                </span>
-            @else
-                <span class="px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-bold">
-                    Pendiente
-                </span>
-            @endif
+            <span id="estado-general"
+                class="px-4 py-2 rounded-full text-sm font-bold
+                {{ $respuesta->estado === 'evaluado' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                {{ ucfirst($respuesta->estado) }}
+            </span>
         </div>
+
 
     </div>
 
@@ -290,7 +287,7 @@ function evaluarRespuesta(id, estado, puntaje) {
             const puntajeEl = card.querySelector('.puntaje');
             if(puntajeEl) puntajeEl.innerText = parseFloat(data.puntaje).toFixed(2);
 
-            // Actualizar estado visual (badge en header)
+            // Actualizar estado visual (badge en header de cada respuesta)
             const estadoEl = card.querySelector('.estado');
             if(estadoEl){
                 if(data.estado === 'correcta'){
@@ -316,7 +313,7 @@ function evaluarRespuesta(id, estado, puntaje) {
                 }
             }
 
-            // 🆕 Actualizar texto del estado en el BODY
+            // Actualizar texto del estado en el BODY
             const estadoTexto = card.querySelector('.estado-texto');
             if(estadoTexto){
                 let clase = "estado-texto font-semibold ";
@@ -336,7 +333,7 @@ function evaluarRespuesta(id, estado, puntaje) {
             totalEl.innerText = `${parseFloat(data.puntaje_total).toFixed(2)} / ${parseFloat(data.maxima_calificacion).toFixed(2)}`;
         }
 
-        // Actualizar estado general en la cabecera
+        // 🆕 Actualizar estado general en la cabecera (campo "estado" de la tabla respuestas)
         const estadoGeneralEl = document.getElementById('estado-general');
         if(estadoGeneralEl){
             estadoGeneralEl.textContent = data.estado_general.charAt(0).toUpperCase() + data.estado_general.slice(1);
@@ -350,6 +347,7 @@ function evaluarRespuesta(id, estado, puntaje) {
     .catch(error => console.error('Error:', error));
 }
 </script>
+
 
 
 
