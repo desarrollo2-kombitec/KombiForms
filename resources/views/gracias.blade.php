@@ -79,7 +79,23 @@
         Tu respuesta ha sido registrada correctamente.<br>
         Agradecemos el tiempo que te tomaste para ayudarnos a mejorar.
     </p>
+
+    <!-- Botón para iniciar otra encuesta -->
+    <a href="{{ route('loginAnonimo') }}" class="btn">
+        Contestar otra vez
+    </a>
 </div>
+
+<!-- 🆕 Script para controlar historial -->
+<script>
+    // Evita que el navegador muestre datos anteriores al regresar
+    window.history.pushState(null, "", window.location.href);
+
+    window.onpopstate = function () {
+        // Si el usuario intenta regresar, lo mandamos al inicio anónimo
+        window.location.href = "{{ route('loginAnonimo') }}";
+    };
+</script>
 
 </body>
 </html>

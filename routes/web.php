@@ -91,7 +91,18 @@ Route::get('/formulario_anonimo/{formulario}', [Contestar_FormularioController::
     ->name('mostrar_anonimos');
 
 
+    //
+    //  RUTA PARA INICIAR EL FORMULARIO
+    //
+Route::get('/anonimo/iniciar/{formulario}', function ($formulario) {
 
+    session([
+        'acceso_anonimo_formulario' => $formulario
+    ]);
+
+    return redirect()->route('mostrar_anonimos', $formulario);
+
+})->name('anonimo.iniciar');
 
 
 // ===============================
