@@ -87,75 +87,79 @@ class Contestar_FormularioController extends Controller
 
     
     public function mostrar(Formulario $formulario)
-    {
-        $ahora = now();
+{
+    $ahora = now();
 
-        // ===============================
-        // ACTUALIZAR ESTADO SEGÚN FECHAS
-        // ===============================
+    // ===============================
+    // ACTUALIZAR ESTADO SEGÚN FECHAS (si existen)
+    // ===============================
+    if ($formulario->fecha_inicio || $formulario->fecha_fin) {
         if ($formulario->fecha_inicio && $formulario->fecha_inicio <= $ahora &&
             (!$formulario->fecha_fin || $formulario->fecha_fin > $ahora)) {
-            $formulario->activo = true;
+            $formulario->activo = true; // dentro del rango
         } else {
-            $formulario->activo = false;
+            $formulario->activo = false; // fuera del rango
         }
         $formulario->save();
+    }
+    // Si no hay fechas, se respeta el campo "activo" tal cual (manual)
 
-        // ===============================
-        // VALIDAR ACCESO ANÓNIMO
-        // ===============================
-        if (!Auth::check()) {
-            $formularioPermitido = session('acceso_anonimo_formulario');
-
-            if ($formularioPermitido != $formulario->id) {
-                return redirect()->route('loginAnonimo');
-            }
-        }
-
-        // Cargar relaciones necesarias
-        $formulario->load('secciones.preguntas.opciones');
-
-        // ===============================
-        // FORMULARIO INACTIVO
-        // ===============================
-        if (!$formulario->activo) {
-            return response()
-                ->view('formularios.formularioCerrado', compact('formulario'))
-                ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
-                ->header('Pragma', 'no-cache')
-                ->header('Expires', '0');
-        }
-
-        // ===============================
-        // UNA SOLA RESPUESTA POR USUARIO
-        // ===============================
-        if (
-            $formulario->requiere_correo &&
-            $formulario->una_respuesta &&
-            Auth::check()
-        ) {
-            $yaContestado = Respuesta::where('formulario_id', $formulario->id)
-                ->where('correo_respondedor', Auth::user()->email)
-                ->exists();
-
-            if ($yaContestado) {
-                return response()
-                    ->view('formularios.formularioYaContestado', compact('formulario'))
-                    ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
-                    ->header('Pragma', 'no-cache')
-                    ->header('Expires', '0');
-            }
-        }
-
-        // ===============================
-        // MOSTRAR FORMULARIO
-        // ===============================
+    // ===============================
+    // FORMULARIO INACTIVO
+    // ===============================
+    if (!$formulario->activo) {
         return response()
-            ->view('Contestar_formulario', compact('formulario'))
+            ->view('formularios.formularioCerrado', compact('formulario'))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
     }
+
+    // ===============================
+    // VALIDAR ACCESO ANÓNIMO (solo si está activo)
+    // ===============================
+    if (!Auth::check()) {
+        $formularioPermitido = session('acceso_anonimo_formulario');
+
+        if ($formularioPermitido != $formulario->id) {
+            return redirect()->route('loginAnonimo');
+        }
+    }
+
+    // Cargar relaciones necesarias
+    $formulario->load('secciones.preguntas.opciones');
+
+    // ===============================
+    // UNA SOLA RESPUESTA POR USUARIO
+    // ===============================
+    if (
+        $formulario->requiere_correo &&
+        $formulario->una_respuesta &&
+        Auth::check()
+    ) {
+        $yaContestado = Respuesta::where('formulario_id', $formulario->id)
+            ->where('correo_respondedor', Auth::user()->email)
+            ->exists();
+
+        if ($yaContestado) {
+            return response()
+                ->view('formularios.formularioYaContestado', compact('formulario'))
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
+        }
+    }
+
+    // ===============================
+    // MOSTRAR FORMULARIO
+    // ===============================
+    return response()
+        ->view('Contestar_formulario', compact('formulario'))
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', '0');
+}
+
 
 
 
