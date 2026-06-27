@@ -40,14 +40,40 @@ class Usuarios extends Controller
 
     
     public function toggleActivo(Request $request, User $user)
-{
-    // Usar el valor que viene del request
-    $user->activo = $request->activo;
-    $user->save();
+    {
+        // Usar el valor que viene del request
+        $user->activo = $request->activo;
+        $user->save();
 
-    return response()->json([
-        'success' => true,
-        'activo' => $user->activo
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'activo' => $user->activo
+        ]);
+    }
+
+    
+    public function GuardarRespondedor(Request $request)
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'confirmed', 'min:8'],
+        ]);
+
+        User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => bcrypt($request->password),
+            'rol'      => 'usuario',
+            'activo'   => 1,
+        ]);
+
+        return redirect()
+            ->route('Usuarios')
+            ->with('success', 'Respondedor registrado correctamente.');
+    }
+
+    //Me quede aqui, hay que hacer la funcion del controlador, la ruta, el modal y hacer que el boton de crear apunte al nuevo modal para que lo abra desde la vista
+
+
 }

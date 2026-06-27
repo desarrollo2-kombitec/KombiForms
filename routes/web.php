@@ -207,6 +207,11 @@ Route::middleware('auth')->group(function () {
 
     
     Route::patch('/usuarios/{user}/toggle', [Usuarios::class, 'toggleActivo'])->name('usuarios.toggle');
+
+    //Guarda usuario respondedor
+    
+    Route::post('/usuarios/respondedor/guardar',[Usuarios::class, 'GuardarRespondedor'])->name('usuarios.respondedor.guardar');
+
 });
 
 

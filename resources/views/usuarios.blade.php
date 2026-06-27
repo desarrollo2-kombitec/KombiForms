@@ -88,8 +88,8 @@
         <div class="action-hero-section">
             <div class="action-hero-content">
                 <div class="action-hero-text">
-                    <h2 class="action-hero-title">Nuevo Usuario</h2>
-                    <p class="action-hero-subtitle">Registra un nuevo usuario en el sistema</p>
+                    <h2 class="action-hero-title">Nuevo Usuario Creador</h2>
+                    <p class="action-hero-subtitle">Registra un nuevo usuario CREADOR en el sistema</p>
                 </div>
                 <a href="{{ route('register') }}" class="btn-hero-add">
                     <span class="btn-hero-icon">
@@ -100,7 +100,7 @@
                             <line x1="23" y1="11" x2="17" y2="11"/>
                         </svg>
                     </span>
-                    <span class="btn-hero-text">Agregar Usuario</span>
+                    <span class="btn-hero-text">Agregar Creador</span>
                     <span class="btn-hero-arrow">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -114,6 +114,84 @@
                 <div class="decoration-circle circle-3"></div>
             </div>
         </div>
+
+           
+        {{-- SECCION DEL BOTON AGREGAR RESPONDEDOR --}}
+
+        <div class="action-hero-section">
+
+            <div class="action-hero-content">
+
+                <div class="action-hero-text">
+                    <h2 class="action-hero-title">
+                        Nuevo Usuario Respondedor
+                    </h2>
+
+                    <p class="action-hero-subtitle">
+                        Registra un nuevo usuario respondedor para contestar encuestas
+                    </p>
+                </div>
+
+                <button
+                type="button"
+                class="btn-hero-add"
+                onclick="abrirModalRespondedor()">
+
+                    <span class="btn-hero-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round">
+
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="8.5" cy="7" r="4"/>
+                            <line x1="20" y1="8" x2="20" y2="14"/>
+                            <line x1="23" y1="11" x2="17" y2="11"/>
+
+                        </svg>
+                    </span>
+
+                    <span class="btn-hero-text">
+                        Agregar Respondedor
+                    </span>
+
+                    <span class="btn-hero-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round">
+
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+
+                        </svg>
+                    </span>
+
+                </button>
+
+            </div>
+
+            <div class="action-hero-decoration">
+                <div class="decoration-circle circle-1"></div>
+                <div class="decoration-circle circle-2"></div>
+                <div class="decoration-circle circle-3"></div>
+            </div>
+
+        </div>
+
+        
+
+
 
         {{-- SECCION DE FILTROS - SEPARADA --}}
         <form id="filtrosForm" method="GET" action="{{ route('Usuarios') }}">
@@ -215,6 +293,9 @@
             @include('profile.partials.tabla_usuario',['usuarios'=>$usuarios])
         </div>
 
+       
+                
+
     </div>
 
     {{-- Footer decorativo --}}
@@ -230,6 +311,11 @@
             <span>Sistema activo</span>
         </div>
     </div>
+
+
+
+     @include('profile.partials.Registrar_UsuarioRespondedor')
+
 
 </div>
 
