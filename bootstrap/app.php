@@ -11,8 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Aquí registramos tu middleware con un alias
+        $middleware->alias([
+            'verifica.noUsuario' => \App\Http\Middleware\VerificaNoUsuario::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    ->create();
