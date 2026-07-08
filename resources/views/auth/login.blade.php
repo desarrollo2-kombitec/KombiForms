@@ -2,8 +2,16 @@
     <div class="login-card p-4 shadow">
         <h4 class="text-center mb-4">Iniciar sesión</h4>
 
-        {{-- Mensajes de error --}}
-        @if ($errors->any())
+        {{-- Aviso específico de credenciales inválidas --}}
+        @if ($errors->has('acceso'))
+            <div class="alert alert-warning text-center">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                {{ $errors->first('acceso') }}
+            </div>
+        @endif
+
+        {{-- Mensajes de error generales (validación, email/password incorrectos, etc.) --}}
+        @if ($errors->any() && !$errors->has('acceso'))
             <div class="alert alert-danger">
                 @foreach ($errors->all() as $error)
                     <p class="mb-0">{{ $error }}</p>
@@ -17,7 +25,6 @@
             <!-- Email -->
             <div class="mb-3">
                 <label for="email" class="form-label">Usuario</label>
-
                 <div class="input-group">
                     <span class="input-group-text">
                         <i class="bi bi-person-fill"></i>
@@ -30,15 +37,12 @@
             <!-- Password -->
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
-
                 <div class="input-group">
                     <span class="input-group-text">
                         <i class="bi bi-lock-fill"></i>
                     </span>
-
                     <input id="password" type="password" class="form-control login-input"
                         name="password" required autocomplete="current-password">
-
                     <button type="button" class="btn btn-outline-secondary"
                         id="toggle-password" tabindex="-1"
                         onclick="togglePassword('password','icono')">
@@ -52,7 +56,6 @@
                 <input id="remember_me" type="checkbox" class="form-check-input" name="remember">
                 <label for="remember_me" class="form-check-label">Recordarme</label>
             </div>
-
 
             <!-- Botón login -->
             <div class="d-grid mb-3">
