@@ -76,4 +76,10 @@ class Formulario extends Model
         return $this->activo ? 'Activo' : 'Inactivo';
     }
 
+    public function usuariosCompartidos()
+    {
+        return $this->belongsToMany(User::class, 'formulario_compartido');
+    }
+
+
 }

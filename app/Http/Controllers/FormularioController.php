@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Formulario;
+use App\Models\User; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Seccion;
@@ -22,6 +23,7 @@ class FormularioController extends Controller
     // LISTAR FORMULARIOS
     // ===============================================
   
+/*
 public function index()
 {
     $formularios = Formulario::withCount('respuestas')
@@ -29,7 +31,106 @@ public function index()
         ->get();
 
     return view('formularios.index', compact('formularios'));
-}
+}*/
+
+    /*
+    public function index()
+    {
+        $user = auth()->user();
+
+        // Caso especial: Super Administrador (acceso total)
+        if ($user->email === 'sadmin@kombitec.com.mx') {
+            $formularios = Formulario::withCount('respuestas')
+                ->orderBy('id', 'desc')
+                ->get();
+        } else {
+            // Solo formularios creados por el usuario actual
+            $formularios = Formulario::withCount('respuestas')
+                ->where('creador_id', $user->id)
+                ->orderBy('id', 'desc')
+                ->get();
+        }
+
+        return view('formularios.index', compact('formularios'));
+    }*/
+
+    public function index()
+    {
+        $user = auth()->user();
+
+        if ($user->email === 'sadmin@kombitec.com.mx') {
+            $formularios = Formulario::withCount('respuestas')
+                ->orderBy('id', 'desc')
+                ->get();
+        } else {
+            $formularios = Formulario::withCount('respuestas')
+                ->where('creador_id', $user->id)
+                ->orWhereHas('usuariosCompartidos', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->orderBy('id', 'desc')
+                ->get();
+        }
+
+        $creadores = User::where('rol', 'creador')->get();
+
+        return view('formularios.index', compact('formularios', 'creadores'));
+    }
+
+    public function obtenerDatosCompartir($id)
+    {
+        $formulario = Formulario::with('usuariosCompartidos')->findOrFail($id);
+
+        // Solo el creador o el super administrador pueden compartir
+        if (
+            auth()->id() !== $formulario->creador_id &&
+            auth()->user()->email !== 'sadmin@kombitec.com.mx'
+        ) {
+            abort(403, 'No autorizado');
+        }
+
+        // Obtener únicamente los creadores disponibles para compartir
+        $creadores = User::where('rol', 'creador')
+            ->where('email', '<>', 'sadmin@kombitec.com.mx')          // No mostrar Super Administrador
+            ->where('id', '<>', $formulario->creador_id)              // No mostrar al creador del formulario
+            ->select('id', 'name', 'email')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'id' => $formulario->id,
+            'titulo' => $formulario->titulo,
+
+            'compartidos' => $formulario->usuariosCompartidos->map(function ($usuario) {
+
+                return [
+                    'id'    => $usuario->id,
+                    'name'  => $usuario->name,
+                    'email' => $usuario->email,
+                ];
+
+            }),
+
+            'creadores' => $creadores,
+        ]);
+    }
+
+    public function compartir(Request $request, $id)
+    {
+        $formulario = Formulario::findOrFail($id);
+
+        // Solo el creador o super admin puede compartir
+        if (auth()->user()->id !== $formulario->creador_id && auth()->user()->email !== 'sadmin@kombitec.com.mx') {
+            abort(403, 'No autorizado');
+        }
+
+        $usuarios = $request->input('usuarios', []);
+        $formulario->usuariosCompartidos()->sync($usuarios);
+
+        return redirect()->route('formularios.index')->with('success', 'Formulario compartido correctamente.');
+    }
+
+
     
 
     // ===============================================

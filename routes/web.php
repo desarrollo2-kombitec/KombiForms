@@ -89,6 +89,11 @@ Route::middleware(['auth','verifica.noUsuario'])->group(function () {
     // Pantalla inicial del sistema, accesible solo para roles válidos (ej. "creador")
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    //Compartir formulario
+    Route::get('/formularios/{id}/compartir', [FormularioController::class, 'obtenerDatosCompartir'])->name('formularios.obtenerCompartir');
+    Route::post('/formularios/{id}/compartir', [FormularioController::class, 'compartir'])->name('formularios.compartir');
+
+
     // ------------------------------------------------------
     // 🔹 Perfil de usuario
     // ------------------------------------------------------

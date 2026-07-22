@@ -47,4 +47,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function formulariosCompartidos()
+    {
+        return $this->belongsToMany(Formulario::class, 'formulario_compartido');
+    }
+
 }
