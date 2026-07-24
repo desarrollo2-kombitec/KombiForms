@@ -127,23 +127,15 @@
                            Respuestas
                         </a>
 
-                        <form action="#" method="POST" class="inline-block">
+                        <form action="{{ route('formularios.destroy', $form->id) }}" method="POST" class="inline-block">
                             @csrf
                             @method('DELETE')
-                            <button class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded shadow transition">
+                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded shadow transition">
                                 Eliminar
                             </button>
                         </form>
 
-                       
-                        {{-- Configuración --}}
-                        <!--<a href="{{ route('formularios.configuracion', ['id' => $form->id, 'from' => 'index']) }}"
-                        class="inline-flex items-center justify-center w-9 h-9 bg-gray-200 hover:bg-gray-300 rounded-full shadow transition"
-                        title="Configuración del formulario">
-                            <img src="https://cdn-icons-png.freepik.com/256/889/889717.png?semt=ais_white_label"
-                                alt="Configuración"
-                                class="w-5 h-5" />
-                        </a>-->
+
 
                         {{-- Configuración --}}
                         <a href="{{ route('formularios.configuracion', ['id' => $form->id, 'from' => 'index']) }}"
@@ -196,75 +188,464 @@
      */
     
 
-async function abrirModalCompartir(formularioId)
-{
-    const modal = document.getElementById('modalCompartir');
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    document.getElementById('tituloFormularioCompartir').innerHTML =
-        'Cargando...';
-
-    document.getElementById('usuariosCompartidos').innerHTML = `
-        <p class="text-gray-400">
-            Cargando...
-        </p>
-    `;
-
-    document.getElementById('listaUsuariosDisponibles').innerHTML = `
-        <p class="text-gray-400">
-            Cargando usuarios...
-        </p>
-    `;
-
-    try
+    async function abrirModalCompartir(formularioId)
     {
-        const response = await fetch(`/formularios/${formularioId}/compartir`);
+        const modal = document.getElementById('modalCompartir');
 
-        if (!response.ok)
-        {
-            throw new Error('Error obteniendo datos');
-        }
-
-        const datos = await response.json();
-
-        console.log(datos);
-
-        document.getElementById('formulario_id_compartir').value =
-            datos.id;
-
-        document.getElementById('formCompartir').action =
-            `/formularios/${datos.id}/compartir`;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
 
         document.getElementById('tituloFormularioCompartir').innerHTML =
-            datos.titulo;
+            'Cargando...';
+
+        document.getElementById('usuariosCompartidos').innerHTML = `
+            <p class="text-gray-400">
+                Cargando...
+            </p>
+        `;
+
+        document.getElementById('listaUsuariosDisponibles').innerHTML = `
+            <p class="text-gray-400">
+                Cargando usuarios...
+            </p>
+        `;
+
+        try
+        {
+            const response = await fetch(`/formularios/${formularioId}/compartir`);
+
+            if (!response.ok)
+            {
+                throw new Error('Error obteniendo datos');
+            }
+
+            const datos = await response.json();
+
+            console.log(datos);
+
+            document.getElementById('formulario_id_compartir').value =
+                datos.id;
+
+            document.getElementById('formCompartir').action =
+                `/formularios/${datos.id}/compartir`;
+
+            document.getElementById('tituloFormularioCompartir').innerHTML =
+                datos.titulo;
+
+            /*
+            |--------------------------------------------------------------------------
+            | GUARDAR DATOS EN MEMORIA
+            |--------------------------------------------------------------------------
+            */
+
+            // Todos los creadores
+            window.creadoresDisponibles = [
+                ...datos.creadores
+            ];
+
+            // Usuarios que YA están compartidos (solo columna izquierda)
+            window.usuariosCompartidosActuales = [
+                ...datos.compartidos
+            ];
+
+            // Usuarios seleccionados para guardar (checkboxes)
+            // Inician con los que ya estaban compartidos
+            window.usuariosSeleccionadosPendientes = [
+                ...datos.compartidos
+            ];
+
+            /*
+            |--------------------------------------------------------------------------
+            | Pintar pantalla
+            |--------------------------------------------------------------------------
+            */
+
+            renderUsuariosCompartidos();
+
+            renderUsuariosDisponibles(
+                window.creadoresDisponibles
+            );
+        }
+        catch (error)
+        {
+            console.error(error);
+
+            alert('Error cargando usuarios para compartir');
+        }
+    }
+
+    function renderUsuariosCompartidos()
+    {
+
+        const contenedor =
+            document.getElementById('usuariosCompartidos');
+
+
+
+        const usuarios =
+            window.usuariosCompartidosActuales || [];
+
+
+
+        if(usuarios.length === 0)
+        {
+
+            contenedor.innerHTML = `
+                <div class="text-center text-gray-400 py-8">
+                    Este formulario todavía no está compartido.
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+
+        let html = '';
+
+
+
+        usuarios.forEach(usuario => {
+
+
+            html += `
+
+            <div class="
+                flex
+                items-center
+                justify-between
+                bg-white
+                border
+                rounded-xl
+                p-3
+                shadow-sm">
+
+
+                <div class="flex items-center gap-3">
+
+
+                    <div class="
+                        w-10
+                        h-10
+                        rounded-full
+                        bg-purple-100
+                        flex
+                        items-center
+                        justify-center
+                        text-purple-600
+                        font-bold">
+
+                        ${usuario.name.charAt(0).toUpperCase()}
+
+                    </div>
+
+
+
+                    <div>
+
+                        <p class="font-semibold text-gray-700">
+                            ${usuario.name}
+                        </p>
+
+
+                        <p class="text-sm text-gray-500">
+                            ${usuario.email}
+                        </p>
+
+
+                    </div>
+
+
+                </div>
+
+
+
+                <button
+                    type="button"
+                    onclick="eliminarUsuarioCompartido(${usuario.id})"
+                    class="
+                        text-red-500
+                        hover:bg-red-100
+                        rounded-full
+                        w-9
+                        h-9
+                        text-xl
+                        font-bold
+                        transition">
+
+                    ×
+
+                </button>
+
+
+            </div>
+
+            `;
+
+
+        });
+
+
+
+        contenedor.innerHTML = html;
+
+
+    }
+
+    function renderUsuariosDisponibles(creadores)
+    {
+
+        const contenedor =
+            document.getElementById('listaUsuariosDisponibles');
+
+
+        contenedor.innerHTML = '';
+
+
+
+        // Usuarios seleccionados actualmente
+        const seleccionados =
+            window.usuariosSeleccionadosPendientes || [];
+
+
+
+        // Usuarios que YA están compartidos
+        const compartidos =
+            window.usuariosCompartidosActuales || [];
+
+
+
+        creadores.forEach(usuario => {
+
+
+            const estaSeleccionado =
+                seleccionados.some(
+                    u => u.id == usuario.id
+                );
+
+
+
+            const yaCompartido =
+                compartidos.some(
+                    u => u.id == usuario.id
+                );
+
+
+
+            const tarjeta =
+                document.createElement('label');
+
+
+
+            tarjeta.className = `
+                flex
+                items-center
+                gap-3
+                cursor-pointer
+                border
+                rounded-xl
+                p-3
+                transition
+                shadow-sm
+                ${
+                    estaSeleccionado
+                    ?
+                    'bg-purple-600 border-purple-700 text-white shadow-lg'
+                    :
+                    'bg-white hover:bg-purple-50'
+                }
+            `;
+
+
+
+            tarjeta.innerHTML = `
+
+                <input
+                    type="checkbox"
+                    name="usuarios[]"
+                    value="${usuario.id}"
+                    class="hidden"
+                    ${estaSeleccionado ? 'checked' : ''}
+                >
+
+
+                <div class="
+                    usuario-avatar
+                    w-10
+                    h-10
+                    rounded-full
+                    flex
+                    items-center
+                    justify-center
+                    font-bold
+                    ${
+                        estaSeleccionado
+                        ?
+                        'bg-white text-purple-600'
+                        :
+                        'bg-gray-200 text-gray-600'
+                    }
+                ">
+
+                    ${usuario.name.charAt(0).toUpperCase()}
+
+                </div>
+
+
+
+                <div class="flex-1">
+
+                    <p class="
+                        font-semibold
+                        ${
+                            estaSeleccionado
+                            ?
+                            'text-white'
+                            :
+                            'text-gray-700'
+                        }
+                    ">
+                        ${usuario.name}
+                    </p>
+
+
+
+                    <p class="
+                        text-sm
+                        ${
+                            estaSeleccionado
+                            ?
+                            'text-purple-100'
+                            :
+                            'text-gray-500'
+                        }
+                    ">
+                        ${usuario.email}
+                    </p>
+
+                </div>
+
+                ${
+                    yaCompartido
+                    ? `
+                        <span
+                            class="text-xs px-2 py-1 rounded-full bg-white/20 text-white whitespace-nowrap">
+                            Compartido
+                        </span>
+                    `
+                    : ''
+                }
+
+            `;
+
+
+
+            const checkbox =
+                tarjeta.querySelector('input');
+
+
+
+            tarjeta.onclick = function(e)
+            {
+
+                e.preventDefault();
+
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Si ya está compartido, NO permitir desmarcarlo.
+                | Debe eliminarse únicamente desde la X del panel izquierdo.
+                |--------------------------------------------------------------------------
+                */
+
+                if (yaCompartido && checkbox.checked)
+                {
+                    return;
+                }
+
+
+
+                checkbox.checked = !checkbox.checked;
+
+
+
+                if(checkbox.checked)
+                {
+
+                    const existe =
+                        window.usuariosSeleccionadosPendientes.some(
+                            u => u.id == usuario.id
+                        );
+
+
+                    if(!existe)
+                    {
+                        window.usuariosSeleccionadosPendientes.push(usuario);
+                    }
+
+                }
+                else
+                {
+
+                    window.usuariosSeleccionadosPendientes =
+                        window.usuariosSeleccionadosPendientes.filter(
+                            u => u.id != usuario.id
+                        );
+
+                }
+
+
+
+                renderUsuariosDisponibles(
+                    window.creadoresDisponibles
+                );
+
+            };
+
+
+
+            contenedor.appendChild(tarjeta);
+
+
+        });
+
+
+    }
+
+    function eliminarUsuarioCompartido(usuarioId)
+    {
 
         /*
         |--------------------------------------------------------------------------
-        | GUARDAR DATOS EN MEMORIA
+        | Quitar de los usuarios que YA están compartidos
         |--------------------------------------------------------------------------
         */
 
-        // Todos los creadores
-        window.creadoresDisponibles = [
-            ...datos.creadores
-        ];
+        window.usuariosCompartidosActuales =
+            window.usuariosCompartidosActuales.filter(
+                usuario => usuario.id != usuarioId
+            );
 
-        // Usuarios que YA están compartidos (solo columna izquierda)
-        window.usuariosCompartidosActuales = [
-            ...datos.compartidos
-        ];
 
-        // Usuarios seleccionados para guardar (checkboxes)
-        // Inician con los que ya estaban compartidos
-        window.usuariosSeleccionadosPendientes = [
-            ...datos.compartidos
-        ];
 
         /*
         |--------------------------------------------------------------------------
-        | Pintar pantalla
+        | Desmarcar también el checkbox correspondiente
+        |--------------------------------------------------------------------------
+        */
+
+        window.usuariosSeleccionadosPendientes =
+            window.usuariosSeleccionadosPendientes.filter(
+                usuario => usuario.id != usuarioId
+            );
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Actualizar ambas columnas
         |--------------------------------------------------------------------------
         */
 
@@ -273,397 +654,8 @@ async function abrirModalCompartir(formularioId)
         renderUsuariosDisponibles(
             window.creadoresDisponibles
         );
-    }
-    catch (error)
-    {
-        console.error(error);
-
-        alert('Error cargando usuarios para compartir');
-    }
-}
-
-function renderUsuariosCompartidos()
-{
-
-    const contenedor =
-        document.getElementById('usuariosCompartidos');
-
-
-
-    const usuarios =
-        window.usuariosCompartidosActuales || [];
-
-
-
-    if(usuarios.length === 0)
-    {
-
-        contenedor.innerHTML = `
-            <div class="text-center text-gray-400 py-8">
-                Este formulario todavía no está compartido.
-            </div>
-        `;
-
-        return;
 
     }
-
-
-
-    let html = '';
-
-
-
-    usuarios.forEach(usuario => {
-
-
-        html += `
-
-        <div class="
-            flex
-            items-center
-            justify-between
-            bg-white
-            border
-            rounded-xl
-            p-3
-            shadow-sm">
-
-
-            <div class="flex items-center gap-3">
-
-
-                <div class="
-                    w-10
-                    h-10
-                    rounded-full
-                    bg-purple-100
-                    flex
-                    items-center
-                    justify-center
-                    text-purple-600
-                    font-bold">
-
-                    ${usuario.name.charAt(0).toUpperCase()}
-
-                </div>
-
-
-
-                <div>
-
-                    <p class="font-semibold text-gray-700">
-                        ${usuario.name}
-                    </p>
-
-
-                    <p class="text-sm text-gray-500">
-                        ${usuario.email}
-                    </p>
-
-
-                </div>
-
-
-            </div>
-
-
-
-            <button
-                type="button"
-                onclick="eliminarUsuarioCompartido(${usuario.id})"
-                class="
-                    text-red-500
-                    hover:bg-red-100
-                    rounded-full
-                    w-9
-                    h-9
-                    text-xl
-                    font-bold
-                    transition">
-
-                ×
-
-            </button>
-
-
-        </div>
-
-        `;
-
-
-    });
-
-
-
-    contenedor.innerHTML = html;
-
-
-}
-
-function renderUsuariosDisponibles(creadores)
-{
-
-    const contenedor =
-        document.getElementById('listaUsuariosDisponibles');
-
-
-    contenedor.innerHTML = '';
-
-
-
-    // Usuarios seleccionados actualmente
-    const seleccionados =
-        window.usuariosSeleccionadosPendientes || [];
-
-
-
-    // Usuarios que YA están compartidos
-    const compartidos =
-        window.usuariosCompartidosActuales || [];
-
-
-
-    creadores.forEach(usuario => {
-
-
-        const estaSeleccionado =
-            seleccionados.some(
-                u => u.id == usuario.id
-            );
-
-
-
-        const yaCompartido =
-            compartidos.some(
-                u => u.id == usuario.id
-            );
-
-
-
-        const tarjeta =
-            document.createElement('label');
-
-
-
-        tarjeta.className = `
-            flex
-            items-center
-            gap-3
-            cursor-pointer
-            border
-            rounded-xl
-            p-3
-            transition
-            shadow-sm
-            ${
-                estaSeleccionado
-                ?
-                'bg-purple-600 border-purple-700 text-white shadow-lg'
-                :
-                'bg-white hover:bg-purple-50'
-            }
-        `;
-
-
-
-        tarjeta.innerHTML = `
-
-            <input
-                type="checkbox"
-                name="usuarios[]"
-                value="${usuario.id}"
-                class="hidden"
-                ${estaSeleccionado ? 'checked' : ''}
-            >
-
-
-            <div class="
-                usuario-avatar
-                w-10
-                h-10
-                rounded-full
-                flex
-                items-center
-                justify-center
-                font-bold
-                ${
-                    estaSeleccionado
-                    ?
-                    'bg-white text-purple-600'
-                    :
-                    'bg-gray-200 text-gray-600'
-                }
-            ">
-
-                ${usuario.name.charAt(0).toUpperCase()}
-
-            </div>
-
-
-
-            <div class="flex-1">
-
-                <p class="
-                    font-semibold
-                    ${
-                        estaSeleccionado
-                        ?
-                        'text-white'
-                        :
-                        'text-gray-700'
-                    }
-                ">
-                    ${usuario.name}
-                </p>
-
-
-
-                <p class="
-                    text-sm
-                    ${
-                        estaSeleccionado
-                        ?
-                        'text-purple-100'
-                        :
-                        'text-gray-500'
-                    }
-                ">
-                    ${usuario.email}
-                </p>
-
-            </div>
-
-            ${
-                yaCompartido
-                ? `
-                    <span
-                        class="text-xs px-2 py-1 rounded-full bg-white/20 text-white whitespace-nowrap">
-                        Compartido
-                    </span>
-                `
-                : ''
-            }
-
-        `;
-
-
-
-        const checkbox =
-            tarjeta.querySelector('input');
-
-
-
-        tarjeta.onclick = function(e)
-        {
-
-            e.preventDefault();
-
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Si ya está compartido, NO permitir desmarcarlo.
-            | Debe eliminarse únicamente desde la X del panel izquierdo.
-            |--------------------------------------------------------------------------
-            */
-
-            if (yaCompartido && checkbox.checked)
-            {
-                return;
-            }
-
-
-
-            checkbox.checked = !checkbox.checked;
-
-
-
-            if(checkbox.checked)
-            {
-
-                const existe =
-                    window.usuariosSeleccionadosPendientes.some(
-                        u => u.id == usuario.id
-                    );
-
-
-                if(!existe)
-                {
-                    window.usuariosSeleccionadosPendientes.push(usuario);
-                }
-
-            }
-            else
-            {
-
-                window.usuariosSeleccionadosPendientes =
-                    window.usuariosSeleccionadosPendientes.filter(
-                        u => u.id != usuario.id
-                    );
-
-            }
-
-
-
-            renderUsuariosDisponibles(
-                window.creadoresDisponibles
-            );
-
-        };
-
-
-
-        contenedor.appendChild(tarjeta);
-
-
-    });
-
-
-}
-
-function eliminarUsuarioCompartido(usuarioId)
-{
-
-    /*
-    |--------------------------------------------------------------------------
-    | Quitar de los usuarios que YA están compartidos
-    |--------------------------------------------------------------------------
-    */
-
-    window.usuariosCompartidosActuales =
-        window.usuariosCompartidosActuales.filter(
-            usuario => usuario.id != usuarioId
-        );
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Desmarcar también el checkbox correspondiente
-    |--------------------------------------------------------------------------
-    */
-
-    window.usuariosSeleccionadosPendientes =
-        window.usuariosSeleccionadosPendientes.filter(
-            usuario => usuario.id != usuarioId
-        );
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Actualizar ambas columnas
-    |--------------------------------------------------------------------------
-    */
-
-    renderUsuariosCompartidos();
-
-    renderUsuariosDisponibles(
-        window.creadoresDisponibles
-    );
-
-}
 
     /**
      * Cierra el modal.

@@ -113,6 +113,9 @@ Route::middleware(['auth','verifica.noUsuario'])->group(function () {
     Route::get('/formularios/{id}/editar', [FormularioController::class, 'editar'])->name('formularios.editar');
     Route::put('/formularios/{id}', [FormularioController::class, 'actualizar'])->name('formularios.actualizar');
     Route::post('/formularios/{id}/modo', [FormularioController::class, 'actualizarModo']);
+    // Eliminar formulario
+    Route::delete('/formularios/{id}', [FormularioController::class, 'destroy'])->name('formularios.destroy');
+
 
     // ------------------------------------------------------
     // 🔹 Evaluaciones
